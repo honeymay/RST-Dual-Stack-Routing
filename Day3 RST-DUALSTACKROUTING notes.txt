@@ -1,0 +1,226 @@
+https://github.com/ggenergg/RST-DualStackRouting
+https://github.com/ggenergg/RivanSecureCRTSolo
+
+
+#This .PY Script is usable only in SecrureCRT App with separate Python3 Runtime installed.
+
+DHCP
+D2
+ip dhcp excluded-add 10.2.1.1 10.2.1.199
+ip dhcp excluded-add 10.2.1.250 10.2.1.254
+
+ip dhcp pool vlan10
+network 10.2.1.0 255.255.255.0
+default-router 10.2.1.254
+
+VLAN
+A1
+int e0/0
+switchport mode access
+switchport access vlan 10
+A2
+int e1/0
+switchport mode access
+switchport access vlan 10
+
+vlan 2
+name CHECKMEEEE	
+end
+
+STP
+D2
+config t
+no logging console
+no ip domain-lookup
+spanning-tree vlan 1-100 root secondary	!make this as secondary root
+end
+
+Portchannel
+!Po10 to A1
+conf t
+int range e0/1,e0/2
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 10 mode active
+channel-protocol lacp
+
+!Po20 to A2
+int range e0/0,e0/3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 20 mode active
+channel-protocol lacp
+
+!Po30 to D2
+int range e1/2,e1/3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 30 mode active
+channel-protocol lacp
+
+@D2
+!Po15 to A1
+conf t
+int range e0/1,e0/2
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 15 mode active
+channel-protocol lacp
+
+!Po25 to A2
+int range e0/0,e0/3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 25 mode active
+channel-protocol lacp
+
+!Po30 to D1
+int range e1/2,e1/3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 30 mode active
+channel-protocol lacp
+end
+
+
+@A1
+!Po10 to D1
+conf t
+int range e0/1,e0/2
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 10 mode active
+channel-protocol lacp
+
+!Po15 to D2 (use SHOW CDP NEIGHBORS to determine ports)
+conf t
+int range e0/3,e1/0
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 15 mode active
+channel-protocol lacp
+end
+
+
+
+@A2
+!Po20 to D1
+conf t
+int range e0/1,e0/2
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 20 mode active
+channel-protocol lacp
+
+
+
+!Po25 to D2
+int range e0/0,e0/3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 25 mode active
+channel-protocol lacp
+end
+
+
+EIGRP
+D2
+conf t
+	router eigrp CCNPLEVEL
+		address-family ipv4 unicast autonomous-system 100
+		network 10.1.4.10 0.0.0.0
+		network 10.2.1.2 0.0.0.0
+		network 10.2.2.2 0.0.0.0
+		network 192.168.1.130 0.0.0.0
+		end
+
+R3 - R4 Area 34
+R3 - R2 Area 0
+R1 - R2 Area 12
+
+R2
+network 10.1.1.4 0.0.0.3 area 0
+network 10.1.1.0 0.0.0.3 area 12
+
+R1
+network 10.1.1.0 0.0.0.3 area 12
+
+R1 BGP:
+config t
+router bgp 1
+ bgp log-neighbor-changes
+ neighbor 208.8.8.4 remote-as 45
+ neighbor 207.7.7.2 remote-as 2
+ neighbor 209.9.9.3 remote-as 3
+ network 10.1.1.1 Mask 255.255.255.252
+ network 208.8.8.0 Mask 255.255.255.0
+ network 207.7.7.0 Mask 255.255.255.0
+ network 209.9.9.0 Mask 255.255.255.0
+end
+
+i1
+@@@ISP1:
+CONFIG T
+router bgp 45
+bgp log-neighbor-changes
+neighbor 24.2.4.2 remote-as 2
+neighbor 45.4.5.5 remote-as 45
+neighbor 208.8.8.1 remote-as 1
+network 208.8.8.0 mask 255.255.255.0
+network 24.2.4.0 mask 255.255.255.0
+network 44.44.44.44 mask 255.255.255.255
+network 45.4.5.0 mask 255.255.255.0
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 208.8.8.1
+end
+
+i2
+config t
+router bgp 2
+bgp log-neighbor-changes
+neighbor 207.7.7.1 remote-as 1
+neighbor 25.2.5.5 remote-as 45
+neighbor 32.3.2.3 remote-as 3
+neighbor 24.2.4.4 remote-as 45
+network 22.22.22.22 mask 255.255.255.255
+network 207.7.7.0 Mask 255.255.255.0
+network 25.2.5.0 Mask 255.255.255.0
+network 32.3.2.0 Mask 255.255.255.0
+network 24.2.4.0 Mask 255.255.255.0
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 207.7.7.1
+end
+
+
+Isp4: (GoogleDNS)
+config t
+int lo 8
+ ip add 8.8.8.8 255.255.255.255
+router bgp 45
+ bgp log-neighbor-changes
+ neighbor 25.2.5.2 remote-as 2
+ neighbor 35.3.5.3 remote-as 3
+ neighbor 45.4.5.4 remote-as 45
+ network 8.8.8.8 mask 255.255.255.255
+ network 55.55.55.55 mask 255.255.255.255
+ network 25.2.5.0 mask 255.255.255.0
+ network 35.3.5.0 mask 255.255.255.0
+ network 45.4.5.0 mask 255.255.255.0
+end
+
+
+

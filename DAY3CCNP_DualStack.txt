@@ -1651,12 +1651,12 @@ Optional non-transitive – An update with an attribute from this category can b
 
 Before we dig into modifications, let's review the default BGP path selection process. An in-depth analysis of the BGP path selection mechanism on Cisco IOS can be found here. A simplified summary of the process follows.
 
-1.Prefer the route with the highest weight (a local, Cisco-proprietary parameter).
-2. Prefer the route with the highest local preference.
+1.Prefer the route with the highest weight (a local, Cisco-proprietary parameter). #1
+2. Prefer the route with the highest local preference. #2
 3. Prefer locally-originated routes over those learned from a neighbor.
-4. Prefer the route with the shortest AS path.
+4. Prefer the route with the shortest AS path. #3
 5. Prefer IGP-learned routes over those with an unknown origin.
-6. Prefer the route with the lowest MED (per AS).
+6. Prefer the route with the lowest MED (per AS). #4
 7. Prefer EBGP-learned routes over IBGP-learned routes.
 8. Prefer the route whose next-hop address has the lowest IGP metric.
 9. Multipath determination

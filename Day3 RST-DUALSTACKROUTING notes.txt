@@ -223,4 +223,7 @@ router bgp 45
 end
 
 
-
+1.Prefer the route with the highest weight (a local, Cisco-proprietary parameter). #1
+2. Prefer the route with the highest local preference. #2
+4. Prefer the route with the shortest AS path. #3
+6. Prefer the route with the lowest MED (per AS). #4
